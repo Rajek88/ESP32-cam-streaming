@@ -1,6 +1,10 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 
+//firebase  config -------------------------------------
+// Include Firebase ESP32 library (this library)
+#include <FirebaseESP32.h>
+
 //
 // WARNING!!! PSRAM IC required for UXGA resolution and high JPEG quality
 //            Ensure ESP32 Wrover Module or other board with PSRAM is selected
@@ -17,12 +21,30 @@
 #define CAMERA_MODEL_AI_THINKER // Has PSRAM
 //#define CAMERA_MODEL_TTGO_T_JOURNAL // No PSRAM
 
+//Define the DNS Name
+#define HOSTNAME "camserver"
+
 #include "camera_pins.h"
 
-const char* ssid = "Mukund_Speed";
-const char* password = "Five@Mitsoe";
+/* Put your SSID & Password */
+const char* ssid = "RickAndMorty";  // Enter SSID here
+const char* password = "princess@e104";  //Enter Password here
 
 void startCameraServer();
+
+
+//firebase vars
+
+
+// Define the Firebase Data object
+FirebaseData fbdo;
+
+// Define the FirebaseAuth data for authentication data
+FirebaseAuth auth;
+
+// Define the FirebaseConfig data for config data
+FirebaseConfig fConfig;
+//-------------------------------------------------------------
 
 void setup() {
   Serial.begin(115200);
@@ -104,6 +126,50 @@ void setup() {
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.localIP());
   Serial.println("' to connect");
+
+
+
+  // setup firebase 
+
+// Assign the project host and api key (required)
+fConfig.host = "hd-robot-default-rtdb.asia-southeast1.firebasedatabase.app";
+fConfig.api_key = "AIzaSyCaNfprZxEN6trDFsVDgTFBpSGAe6xXLNk";
+
+// Assign the user sign in credentials
+auth.user.email = "rajendra@rajendra.rk";
+
+auth.user.password = "rajendra@rajendra.rk";
+
+// Initialize the library with the Firebase authen and config.
+Firebase.begin(&fConfig, &auth);
+
+// Optional, set AP reconnection in setup()
+Firebase.reconnectWiFi(true);
+
+// Optional, set number of error retry
+Firebase.setMaxRetry(fbdo, 3);
+
+// Optional, set number of error resumable queues
+Firebase.setMaxErrorQueue(fbdo, 30);
+
+// Optional, use classic HTTP GET and POST requests. 
+// This option allows get and delete functions (PUT and DELETE HTTP requests) works for 
+// device connected behind the Firewall that allows only GET and POST requests.   
+Firebase.enableClassicRequest(fbdo, true);
+
+// Optional, set the size of HTTP response buffer
+// Prevent out of memory for large payload but data may be truncated and can't determine its type.
+fbdo.setResponseSize(8192); // minimum size is 4096 bytes
+
+//#define FIREBASE_HOST "hd-robot-default-rtdb.asia-southeast1.firebasedatabase.app" //Without http:// or https:// schemes
+//#define FIREBASE_AUTH "gYaPu4ufQkaw9w6Mp4Da3bLEPZYnKNX1OHMkxJlg"
+//------------------------------------------------------
+
+//send IP to firebase ---------------------------------------------
+  String ip = WiFi.localIP().toString();
+  Firebase.setString(fbdo, "unit1/config/camera_ip",ip);
+
+  
 }
 
 void loop() {
